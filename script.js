@@ -208,6 +208,8 @@ function checkSequences() {
                 if (completedSuits.length === 8) {
                     if (timerInterval) clearInterval(timerInterval); 
                     playVictorySound();
+                    messages = ['Dodou venceu!', 'Parabéns dodou!', 'Você é incrível, dodou!', 'Dodou é o melhor!', 'Joga muito dodou!'];
+                    document.getElementById('message').innerText = messages[Math.floor(Math.random() * messages.length)];
                     document.getElementById('message').style.display = 'block';
                 }
                 return;
