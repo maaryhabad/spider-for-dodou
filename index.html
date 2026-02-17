@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spider - Edição Dodou</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="status-bar">
+        <div class="controls">
+            <button class="btn new-btn" id="main-new-btn" onclick="showNewGameOptions()">↻ Novo Jogo</button>
+            <div id="new-game-options">
+                <select id="suit-count">
+                    <option value="1">1 Naipe</option>
+                    <option value="2" selected>2 Naipes</option>
+                    <option value="4">4 Naipes</option>
+                </select>
+                <button class="btn" onclick="initGame()">✓ Confirmar</button>
+                <button class="btn" onclick="hideNewGameOptions()">✕</button>
+            </div>
+            <button class="btn undo-btn" id="undo-btn" onclick="undoMove()" disabled>↶ Desfazer</button>
+            <button class="btn hint-btn" onclick="getHint()">💡 Dica</button>
+            <button class="btn music-btn" onclick="toggleMusicModal()">♫ Playlist</button>
+        </div>
+        
+        <div class="stats">
+            <div>🕒 <span id="timer">00:00</span></div>
+            <div>🏆 <span id="score">500</span></div>
+        </div>
+    </div>
+
+    <div id="game-board">
+        <div class="column" id="col-0" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+        <div class="column" id="col-1" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+        <div class="column" id="col-2" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+        <div class="column" id="col-3" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+        <div class="column" id="col-4" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+        <div class="column" id="col-5" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+        <div class="column" id="col-6" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+        <div class="column" id="col-7" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+        <div class="column" id="col-8" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+        <div class="column" id="col-9" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+    </div>
+
+    <div id="foundations"></div>
+
+    <div id="deck-container" onclick="drawFromDeck()">
+        <div id="deck-pile"></div>
+        <div id="deck-count">5</div>
+    </div>
+
+    <div id="music-modal" onclick="closeMusicModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="close-modal" onclick="toggleMusicModal()">×</div>
+            <iframe id="music-player" src="https://embed.music.apple.com/br/playlist/%C3%A1rabe/pl.u-leyl0yeCMN62PDD" allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write" frameborder="0" height="450" style="width:100%;max-width:660px;overflow:hidden;border-radius:10px;" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"></iframe>
+        </div>
+    </div>
+
+    <div id="message">
+        <h2 style="font-size: 2.5em; color: #2D5A27;">🏆 VITÓRIA!</h2>
+        <p>Você é um mestre da Paciência Spider!</p>
+        <button class="btn" onclick="initGame()" style="margin: 20px auto;">Jogar Novamente</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
