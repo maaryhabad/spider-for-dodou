@@ -120,20 +120,11 @@ async function initGame() {
         });
     }
     
-    // Embaralha o deck
     deck.sort(() => Math.random() - 0.5);
     
-    // Ajuste de Dificuldade: Se for modo médio (2 naipes), vamos tentar garantir que as 
-    // primeiras cartas distribuídas (as que ficam visíveis) tenham mais chances de combinar.
+    // Melhoria de Jogabilidade no Modo Médio
     if (suitCount === 2) {
-        // Separa cartas por naipe para organizar melhor o topo
-        const spades = deck.filter(c => c.suit === '♠');
-        const hearts = deck.filter(c => c.suit === '♥');
-        const others = deck.filter(c => c.suit !== '♠' && c.suit !== '♥');
-        
-        // Vamos remontar o deck colocando algumas sequências lógicas no final (que serão as primeiras a sair)
-        // Isso aumenta a chance de começar com jogadas possíveis.
-        deck = deck.filter(c => true); // fallback shuffle
+        // Lógica interna de embaralhamento mais amigável pode ser expandida aqui
     }
 
     columns = Array.from({length: 10}, () => []);
@@ -141,11 +132,9 @@ async function initGame() {
     render(true);
     isDealing = true;
     
-    // Distribuição inicial
     for (let i = 0; i < 54; i++) {
         let card = deck.pop();
         columns[i % 10].push(card);
-        // A última carta de cada coluna fica virada para cima
         if (i >= 44) card.faceUp = true;
         render(); 
         await new Promise(r => setTimeout(r, 15));
@@ -174,12 +163,26 @@ function render(empty = false) {
         if (empty) continue;
         
         let currentTop = 0;
+        const colLength = columns[i].length;
+        
+        // Ajuste Dinâmico de Espaçamento Vertical
+        // Se a coluna tiver muitas cartas, reduzimos o espaço entre elas para caber na tela
+        let faceUpGap = 35;
+        let faceDownGap = 12;
+        
+        if (colLength > 10) {
+            const factor = Math.max(0.4, 1 - (colLength - 10) * 0.05);
+            faceUpGap = Math.floor(35 * factor);
+            faceDownGap = Math.floor(12 * factor);
+        }
+
         columns[i].forEach((card, idx) => {
             const cardDiv = document.createElement('div');
             const isRed = (card.suit === '♥' || card.suit === '♦');
             cardDiv.className = `card ${card.faceUp ? '' : 'face-down'} ${isRed ? 'red' : 'black'}`;
             cardDiv.style.top = currentTop + 'px';
-            currentTop += card.faceUp ? 35 : 12; 
+            
+            currentTop += card.faceUp ? faceUpGap : faceDownGap; 
 
             if (card.faceUp) {
                 cardDiv.draggable = isMovableSequence(i, idx);
@@ -191,26 +194,32 @@ function render(empty = false) {
         });
     }
     
-    // Ajuste do Deck de Reserva (Baralho de Distribuição)
+    // Atualização do Deck de Reserva (Apenas o Badge clicável)
     const remainingPiles = Math.ceil(deck.length / 10);
     const deckCountElem = document.getElementById('deck-count');
     const deckContainer = document.getElementById('deck-container');
     const deckPile = document.getElementById('deck-pile');
     
-    if (deckCountElem) deckCountElem.innerText = remainingPiles;
+    if (deckCountElem) {
+        deckCountElem.innerText = remainingPiles;
+        // Torna o badge clicável
+        deckCountElem.style.cursor = 'pointer';
+        deckCountElem.onclick = (e) => {
+            e.stopPropagation();
+            drawFromDeck();
+        };
+    }
     
     if (deckContainer) {
         if (deck.length > 0) {
             deckContainer.style.display = 'block';
             if (deckPile) {
-                const shadowVal = remainingPiles * 1.5;
-                deckPile.style.boxShadow = `
-                    ${shadowVal}px ${shadowVal}px 0px rgba(0,0,0,0.3),
-                    ${shadowVal/2}px ${shadowVal/2}px 0px rgba(255,255,255,0.1)
-                `;
-                deckPile.className = 'card face-down';
-                deckPile.style.position = 'relative';
-                deckPile.style.border = '1px solid rgba(255,255,255,0.2)';
+                // Remove o visual de carta do fundo, deixando apenas o badge
+                deckPile.style.background = 'transparent';
+                deckPile.style.border = 'none';
+                deckPile.style.boxShadow = 'none';
+                // Remove o cursor do container para que pareça que apenas o badge é clicável
+                deckContainer.style.cursor = 'default';
             }
         } else {
             deckContainer.style.display = 'none';
@@ -278,7 +287,6 @@ function isComplete(a) {
     return true;
 }
 
-// Dicas e Movimentos Automáticos
 function getHint() {
     for (let i = 0; i < 10; i++) {
         for (let j = 0; j < columns[i].length; j++) {
@@ -322,7 +330,6 @@ function autoMove(f, idx) {
     playErrorSound();
 }
 
-// Drag & Drop
 function drag(e, c, i) { 
     e.dataTransfer.setData("f", c.toString()); 
     e.dataTransfer.setData("idx", i.toString()); 
@@ -367,7 +374,6 @@ function canDrop(card, target) {
     return ranks.indexOf(card.rank) === ranks.indexOf(lastCard.rank) - 1;
 }
 
-// Baralho de Reserva
 async function drawFromDeck() {
     if (deck.length === 0 || isDealing || columns.some(c => c.length === 0)) { 
         playErrorSound(); 
