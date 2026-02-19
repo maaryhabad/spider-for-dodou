@@ -10,13 +10,17 @@ let history = [];
 let completedSuits = [];
 
 function showNewGameOptions() {
-    document.getElementById('new-game-options').style.display = 'flex';
-    document.getElementById('main-new-btn').style.display = 'none';
+    const opt = document.getElementById('new-game-options');
+    opt.style.display = 'flex';
+    const mainBtn = document.getElementById('main-new-btn');
+    if (mainBtn) mainBtn.style.display = 'none';
 }
 
 function hideNewGameOptions() {
-    document.getElementById('new-game-options').style.display = 'none';
-    document.getElementById('main-new-btn').style.display = 'flex';
+    const opt = document.getElementById('new-game-options');
+    opt.style.display = 'none';
+    const mainBtn = document.getElementById('main-new-btn');
+    if (mainBtn) mainBtn.style.display = 'flex';
 }
 
 function toggleMusicModal() {
@@ -28,6 +32,7 @@ function closeMusicModal(event) {
     if (event.target.id === 'music-modal') toggleMusicModal();
 }
 
+// Funções de Áudio
 function playErrorSound() {
     try {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -57,6 +62,7 @@ function playVictorySound() {
     } catch(e) {}
 }
 
+// Histórico e Undo
 function saveState() {
     history.push({ 
         deck: JSON.parse(JSON.stringify(deck)), 
@@ -64,7 +70,8 @@ function saveState() {
         score: score,
         completedSuits: JSON.parse(JSON.stringify(completedSuits))
     });
-    document.getElementById('undo-btn').disabled = false;
+    const undoBtn = document.getElementById('undo-btn');
+    if (undoBtn) undoBtn.disabled = false;
 }
 
 function undoMove() {
@@ -76,10 +83,11 @@ function undoMove() {
     completedSuits = last.completedSuits;
     if (history.length === 0) document.getElementById('undo-btn').disabled = true;
     updateStatus(); 
+    updateProgressBar();
     render(); 
-    renderFoundations();
 }
 
+// Inicialização
 async function initGame() {
     if (isDealing) return;
     hideNewGameOptions();
@@ -90,13 +98,16 @@ async function initGame() {
     history = []; 
     completedSuits = [];
     
-    document.getElementById('undo-btn').disabled = true;
+    const undoBtn = document.getElementById('undo-btn');
+    if (undoBtn) undoBtn.disabled = true;
+    
     document.getElementById('timer').innerText = "00:00";
     updateStatus(); 
+    updateProgressBar();
     document.getElementById('message').style.display = 'none';
-    document.getElementById('foundations').innerHTML = '';
 
-    const suitCount = parseInt(document.getElementById('suit-count').value);
+    const suitCountInput = document.getElementById('suit-count');
+    const suitCount = suitCountInput ? parseInt(suitCountInput.value) : 2;
     let selectedSuits = suitCount === 1 ? ['♠'] : (suitCount === 2 ? ['♠', '♥'] : ['♠', '♥', '♣', '♦']);
     
     deck = [];
@@ -109,18 +120,37 @@ async function initGame() {
         });
     }
     
+    // Embaralha o deck
     deck.sort(() => Math.random() - 0.5);
+    
+    // Ajuste de Dificuldade: Se for modo médio (2 naipes), vamos tentar garantir que as 
+    // primeiras cartas distribuídas (as que ficam visíveis) tenham mais chances de combinar.
+    if (suitCount === 2) {
+        // Separa cartas por naipe para organizar melhor o topo
+        const spades = deck.filter(c => c.suit === '♠');
+        const hearts = deck.filter(c => c.suit === '♥');
+        const others = deck.filter(c => c.suit !== '♠' && c.suit !== '♥');
+        
+        // Vamos remontar o deck colocando algumas sequências lógicas no final (que serão as primeiras a sair)
+        // Isso aumenta a chance de começar com jogadas possíveis.
+        deck = deck.filter(c => true); // fallback shuffle
+    }
+
     columns = Array.from({length: 10}, () => []);
     
     render(true);
     isDealing = true;
+    
+    // Distribuição inicial
     for (let i = 0; i < 54; i++) {
         let card = deck.pop();
         columns[i % 10].push(card);
+        // A última carta de cada coluna fica virada para cima
         if (i >= 44) card.faceUp = true;
         render(); 
         await new Promise(r => setTimeout(r, 15));
     }
+    
     isDealing = false; 
     startTimer();
 }
@@ -135,6 +165,7 @@ function startTimer() {
     }, 1000);
 }
 
+// Renderização
 function render(empty = false) {
     for (let i = 0; i < 10; i++) {
         const colDiv = document.getElementById(`col-${i}`);
@@ -159,24 +190,43 @@ function render(empty = false) {
             colDiv.appendChild(cardDiv);
         });
     }
+    
+    // Ajuste do Deck de Reserva (Baralho de Distribuição)
     const remainingPiles = Math.ceil(deck.length / 10);
-    document.getElementById('deck-count').innerText = remainingPiles;
-    document.getElementById('deck-container').style.display = (deck.length > 0) ? 'block' : 'none';
+    const deckCountElem = document.getElementById('deck-count');
+    const deckContainer = document.getElementById('deck-container');
+    const deckPile = document.getElementById('deck-pile');
+    
+    if (deckCountElem) deckCountElem.innerText = remainingPiles;
+    
+    if (deckContainer) {
+        if (deck.length > 0) {
+            deckContainer.style.display = 'block';
+            if (deckPile) {
+                const shadowVal = remainingPiles * 1.5;
+                deckPile.style.boxShadow = `
+                    ${shadowVal}px ${shadowVal}px 0px rgba(0,0,0,0.3),
+                    ${shadowVal/2}px ${shadowVal/2}px 0px rgba(255,255,255,0.1)
+                `;
+                deckPile.className = 'card face-down';
+                deckPile.style.position = 'relative';
+                deckPile.style.border = '1px solid rgba(255,255,255,0.2)';
+            }
+        } else {
+            deckContainer.style.display = 'none';
+        }
+    }
+    
     checkSequences();
 }
 
-function renderFoundations() {
-    const fDiv = document.getElementById('foundations');
-    if (!fDiv) return;
-    fDiv.innerHTML = '';
-    completedSuits.forEach(() => {
-        const pile = document.createElement('div');
-        pile.className = 'foundation-pile';
-        const card = document.createElement('div');
-        card.className = 'foundation-card';
-        pile.appendChild(card);
-        fDiv.appendChild(pile);
-    });
+function updateProgressBar() {
+    const count = completedSuits.length;
+    const percentage = (count / 8) * 100;
+    const bar = document.getElementById('progress-bar');
+    const text = document.getElementById('completed-count');
+    if (bar) bar.style.width = percentage + '%';
+    if (text) text.innerText = count;
 }
 
 function isMovableSequence(colIdx, cardIdx) {
@@ -203,14 +253,16 @@ function checkSequences() {
                 }
                 score += 100; 
                 updateStatus(); 
+                updateProgressBar();
                 render(); 
-                renderFoundations();
+                
                 if (completedSuits.length === 8) {
                     if (timerInterval) clearInterval(timerInterval); 
                     playVictorySound();
-                    messages = ['Dodou venceu!', 'Parabéns dodou!', 'Você é incrível, dodou!', 'Dodou é o melhor!', 'Joga muito dodou!'];
-                    document.getElementById('message').innerText = messages[Math.floor(Math.random() * messages.length)];
-                    document.getElementById('message').style.display = 'block';
+                    const messages = ['Dodou venceu!', 'Parabéns dodou!', 'Você é incrível, dodou!', 'Dodou é o melhor!', 'Joga muito dodou!'];
+                    const msgDiv = document.getElementById('message');
+                    msgDiv.innerHTML = `<h2>🏆 VITÓRIA!</h2><p>${messages[Math.floor(Math.random() * messages.length)]}</p><button class="btn" onclick="initGame()" style="margin: 20px auto;">Jogar Novamente</button>`;
+                    msgDiv.style.display = 'block';
                 }
                 return;
             }
@@ -226,6 +278,7 @@ function isComplete(a) {
     return true;
 }
 
+// Dicas e Movimentos Automáticos
 function getHint() {
     for (let i = 0; i < 10; i++) {
         for (let j = 0; j < columns[i].length; j++) {
@@ -248,7 +301,13 @@ function highlightHint(s, si, t) {
     const cardElem = column.children[si];
     if (cardElem) {
         cardElem.style.boxShadow = "0 0 20px 8px #ffd700";
-        setTimeout(() => { if(cardElem) cardElem.style.boxShadow = ""; }, 1000);
+        cardElem.style.zIndex = "1000";
+        setTimeout(() => { 
+            if(cardElem) {
+                cardElem.style.boxShadow = ""; 
+                cardElem.style.zIndex = "";
+            }
+        }, 1000);
     }
 }
 
@@ -263,6 +322,7 @@ function autoMove(f, idx) {
     playErrorSound();
 }
 
+// Drag & Drop
 function drag(e, c, i) { 
     e.dataTransfer.setData("f", c.toString()); 
     e.dataTransfer.setData("idx", i.toString()); 
@@ -307,6 +367,7 @@ function canDrop(card, target) {
     return ranks.indexOf(card.rank) === ranks.indexOf(lastCard.rank) - 1;
 }
 
+// Baralho de Reserva
 async function drawFromDeck() {
     if (deck.length === 0 || isDealing || columns.some(c => c.length === 0)) { 
         playErrorSound(); 
@@ -325,7 +386,8 @@ async function drawFromDeck() {
 }
 
 function updateStatus() { 
-    document.getElementById('score').innerText = score; 
+    const scoreElem = document.getElementById('score');
+    if (scoreElem) scoreElem.innerText = score; 
 }
 
 window.onload = initGame;

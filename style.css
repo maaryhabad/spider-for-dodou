@@ -1,183 +1,256 @@
 :root {
-        --bg-color: #2D5A27;
-        --card-back: #1e3a8a;
-        --card-width: 95px;
-        --card-height: 140px;
-    }
+--bg-color: #2D5A27;
+--card-back: #1e3a8a;
+/* Tamanho base para telas grandes */
+--card-width: 95px;
+--card-height: 140px;
+--card-gap: 15px;
+}
 
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: var(--bg-color);
-        margin: 0;
-        overflow-x: hidden;
-        color: white;
-        user-select: none;
-    }
+/* Ajustes para telas menores (Tablets e Laptops pequenos) */
+@media (max-width: 1100px) {
+:root {
+--card-width: 8.5vw;
+--card-height: 12.5vw;
+--card-gap: 1vw;
+}
+}
 
-    #status-bar {
-        background: rgba(0,0,0,0.95);
-        padding: 0 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-weight: bold;
-        z-index: 100;
-        position: sticky;
-        top: 0;
-        box-shadow: 0 2px 15px rgba(0,0,0,0.7);
-        height: 60px;
-    }
+/* Ajustes para Celulares */
+@media (max-width: 600px) {
+:root {
+--card-width: 9vw;
+--card-height: 13vw;
+--card-gap: 0.5vw;
+}
+#status-bar {
+height: auto;
+flex-direction: column;
+padding: 10px;
+gap: 10px;
+}
+.stats {
+font-size: 1em;
+gap: 15px;
+}
+}
 
-    .controls {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
+body {
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+background-color: var(--bg-color);
+margin: 0;
+display: flex;
+flex-direction: column;
+min-height: 100vh;
+overflow-x: hidden;
+color: white;
+user-select: none;
+}
 
-    .btn {
-        background: #eee;
-        color: #333;
-        border: none;
-        padding: 8px 15px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-weight: bold;
-        font-size: 0.9em;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        white-space: nowrap;
-    }
+#status-bar {
+background: rgba(0,0,0,0.95);
+padding: 0 20px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+font-weight: bold;
+z-index: 100;
+position: sticky;
+top: 0;
+box-shadow: 0 2px 15px rgba(0,0,0,0.7);
+height: 60px;
+}
 
-    .btn:hover { background: #fff; transform: translateY(-1px); }
-    .btn:active { transform: translateY(0); }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    
-    .btn.new-btn { background: #ffffff; }
-    .btn.music-btn { background: #fa243c; color: white; }
-    .btn.hint-btn { background: #ffd700; }
-    .btn.undo-btn { background: #add8e6; }
+.controls {
+display: flex;
+align-items: center;
+gap: 8px;
+flex-wrap: wrap;
+justify-content: center;
+}
 
-    #new-game-options {
-        display: none;
-        background: #444;
-        padding: 5px 12px;
-        border-radius: 6px;
-        align-items: center;
-        gap: 8px;
-    }
+.btn {
+background: #eee;
+color: #333;
+border: none;
+padding: 6px 12px;
+border-radius: 6px;
+cursor: pointer;
+font-weight: bold;
+font-size: 0.85em;
+transition: all 0.2s;
+display: flex;
+align-items: center;
+gap: 5px;
+white-space: nowrap;
+}
 
-    #suit-count {
-        padding: 4px;
-        border-radius: 4px;
-        border: none;
-        font-weight: bold;
-    }
+.btn:hover { background: #fff; transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-    #game-board {
-        display: grid;
-        grid-template-columns: repeat(10, 1fr);
-        gap: 15px;
-        padding: 25px;
-        max-width: 1400px;
-        margin: 0 auto;
-        margin-bottom: 180px; 
-    }
+#game-board {
+display: grid;
+grid-template-columns: repeat(10, 1fr);
+gap: var(--card-gap);
+padding: 15px;
+max-width: 1400px;
+margin: 0 auto;
+flex-grow: 1; /* Garante que o tabuleiro ocupe o espaço disponível */
+}
 
-    .column { position: relative; min-height: 70vh; }
+/* Nova área inferior para evitar sobreposição */
+.bottom-bar {
+position: sticky;
+bottom: 0;
+background: linear-gradient(transparent, rgba(0,0,0,0.8) 20%, rgba(0,0,0,0.95));
+width: 100%;
+padding: 15px 30px;
+display: flex;
+justify-content: space-between;
+align-items: flex-end;
+pointer-events: none;
+z-index: 200;
+box-sizing: border-box;
+}
 
-    .card {
-        width: var(--card-width);
-        height: var(--card-height);
-        background: white;
-        border-radius: 8px;
-        position: absolute;
-        color: black;
-        box-shadow: 3px 3px 8px rgba(0,0,0,0.3);
-        display: flex;
-        flex-direction: row; 
-        justify-content: flex-start; 
-        align-items: flex-start; /* Fixado no topo */
-        padding: 6px 8px; /* Ajuste fino do topo e laterais */
-        box-sizing: border-box;
-        cursor: pointer;
-        border: 1px solid #777;
-        transition: transform 0.1s ease-out;
-        font-weight: 900; 
-        font-size: 1.45em; 
-        gap: 3px; 
-    }
+/* Reativa cliques para os elementos filhos */
+.bottom-bar > * {
+pointer-events: auto;
+}
 
-    .card .rank {
-        line-height: 1;
-        display: inline-block;
-        min-width: 0.8em; 
-    }
+.column {
+position: relative;
+min-height: 75vh;
+width: var(--card-width);
+}
 
-    .card .suit {
-        font-size: 0.9em; 
-        line-height: 1.1; /* Pequeno ajuste para alinhar com a base do número */
-        display: inline-block;
-    }
+.card {
+width: var(--card-width);
+height: var(--card-height);
+background: white;
+border-radius: 5px;
+position: absolute;
+color: black;
+box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+display: flex;
+flex-direction: row;
+justify-content: flex-start;
+align-items: flex-start;
+padding: 4px 5px;
+box-sizing: border-box;
+cursor: pointer;
+border: 1px solid #777;
+font-weight: 900;
+font-size: clamp(0.8em, 2vw, 1.4em);
+gap: 2px;
+}
 
-    .card.face-down, .foundation-card {
-        background-color: var(--card-back) !important;
-        background-image: 
-            repeating-linear-gradient(45deg, transparent, transparent 7px, rgba(255,255,255,.05) 7px, rgba(255,255,255,.05) 14px),
-            radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%) !important;
-        color: transparent !important;
-        border: 2px solid rgba(255,255,255,0.4) !important;
-    }
+.card .rank {
+line-height: 1;
+min-width: 0.7em;
+}
 
-    .card.red { color: #cc0000; }
-    .card.black { color: #000000; }
+.card .suit {
+font-size: 0.85em;
+line-height: 1.1;
+}
 
-    #foundations {
-        position: fixed; bottom: 30px; left: 30px; display: flex; z-index: 50; gap: 5px;
-    }
+.card.face-down, .foundation-card {
+background-color: var(--card-back) !important;
+background-image:
+repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,.05) 5px, rgba(255,255,255,.05) 10px) !important;
+color: transparent !important;
+}
 
-    .foundation-pile { width: calc(var(--card-width) * 0.45); height: var(--card-height); position: relative; }
+.card.red { color: #cc0000; }
+.card.black { color: #000000; }
 
-    .foundation-card {
-        position: absolute; width: var(--card-width); height: var(--card-height);
-        border-radius: 8px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-    }
+#foundations {
+display: flex;
+gap: 5px;
+}
 
-    #deck-container { position: fixed; bottom: 30px; right: 30px; z-index: 50; cursor: pointer; }
+.foundation-pile {
+width: calc(var(--card-width) * 0.4);
+height: var(--card-height);
+position: relative;
+}
 
-    #deck-pile {
-        width: var(--card-width); height: var(--card-height);
-        background-color: var(--card-back); border-radius: 8px; border: 3px solid white;
-        box-shadow: 5px 5px 15px rgba(0,0,0,0.6);
-    }
+.foundation-card {
+position: absolute;
+width: var(--card-width);
+height: var(--card-height);
+border-radius: 5px;
+box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+bottom: 0; /* Alinha na base da barra */
+}
 
-    #deck-count {
-        position: absolute; top: -15px; right: -15px; background: #fa243c;
-        color: white; width: 35px; height: 35px; border-radius: 50%;
-        display: flex; justify-content: center; align-items: center;
-        font-weight: bold; border: 2px solid white;
-    }
+#deck-container {
+position: relative;
+cursor: pointer;
+}
 
-    .stats { display: flex; gap: 30px; font-size: 1.2em; align-items: center; }
+#deck-pile {
+width: var(--card-width);
+height: var(--card-height);
+background-color: var(--card-back);
+border-radius: 5px;
+border: 2px solid white;
+}
 
-    #music-modal {
-        display: none; position: fixed; z-index: 2000; left: 0; top: 0;
-        width: 100%; height: 100%; background-color: rgba(0,0,0,0.85);
-        justify-content: center; align-items: center;
-    }
+#deck-count {
+position: absolute;
+top: -10px;
+right: -10px;
+background: #fa243c;
+color: white;
+width: 28px;
+height: 28px;
+border-radius: 50%;
+display: flex;
+justify-content: center;
+align-items: center;
+font-size: 0.8em;
+font-weight: bold;
+border: 2px solid white;
+}
 
-    .modal-content { background-color: #111; padding: 10px; border-radius: 12px; width: 90%; max-width: 660px; position: relative; }
+.stats { display: flex; gap: 20px; font-size: 1.1em; align-items: center; }
 
-    .close-modal {
-        position: absolute; right: -15px; top: -15px; background: #fff;
-        color: #000; width: 35px; height: 35px; border-radius: 50%;
-        display: flex; justify-content: center; align-items: center; cursor: pointer;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    }
+#music-modal {
+display: none;
+position: fixed;
+z-index: 2000;
+left: 0;
+top: 0;
+width: 100%;
+height: 100%;
+background-color: rgba(0,0,0,0.85);
+justify-content: center;
+align-items: center;
+}
 
-    #message {
-        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        background: white; color: black; padding: 40px; border-radius: 15px;
-        display: none; text-align: center; z-index: 3000; box-shadow: 0 0 100px rgba(0,0,0,0.5);
-    }
+.modal-content {
+background-color: #111;
+padding: 10px;
+border-radius: 12px;
+width: 95%;
+max-width: 660px;
+position: relative;
+}
+
+#message {
+position: fixed;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%);
+background: white;
+color: black;
+padding: 20px;
+border-radius: 15px;
+display: none;
+text-align: center;
+z-index: 3000;
+width: 80%;
+}
