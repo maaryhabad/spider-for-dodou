@@ -9,6 +9,16 @@ let isDealing = false;
 let history = [];
 let completedSuits = [];
 
+// Exportação para testes (Node.js/Jest)
+if (typeof module !== 'undefined') {
+    module.exports = { 
+        canDrop, 
+        isMovableSequence, 
+        isComplete, 
+        calculateScore: () => score 
+    };
+}
+
 function showNewGameOptions() {
     const opt = document.getElementById('new-game-options');
     opt.style.display = 'flex';
@@ -87,7 +97,7 @@ function undoMove() {
     render(); 
 }
 
-// Inicialização
+// Inicialização com Lógica de Equilíbrio (Estilo Microsoft)
 async function initGame() {
     if (isDealing) return;
     hideNewGameOptions();
@@ -101,18 +111,20 @@ async function initGame() {
     const undoBtn = document.getElementById('undo-btn');
     if (undoBtn) undoBtn.disabled = true;
     
-    document.getElementById('timer').innerText = "00:00";
+    if (document.getElementById('timer')) document.getElementById('timer').innerText = "00:00";
     updateStatus(); 
     updateProgressBar();
-    document.getElementById('message').style.display = 'none';
+    if (document.getElementById('message')) document.getElementById('message').style.display = 'none';
 
     const suitCountInput = document.getElementById('suit-count');
     const suitCount = suitCountInput ? parseInt(suitCountInput.value) : 2;
     let selectedSuits = suitCount === 1 ? ['♠'] : (suitCount === 2 ? ['♠', '♥'] : ['♠', '♥', '♣', '♦']);
     
     deck = [];
-    const iterations = 104 / (selectedSuits.length * 13);
-    for (let s = 0; s < iterations; s++) {
+    const totalSuitsNeeded = 8;
+    const copiesPerSuit = totalSuitsNeeded / selectedSuits.length;
+
+    for (let s = 0; s < copiesPerSuit; s++) {
         selectedSuits.forEach(suit => {
             ranks.forEach(rank => {
                 deck.push({ rank, suit, faceUp: false });
@@ -121,10 +133,11 @@ async function initGame() {
     }
     
     deck.sort(() => Math.random() - 0.5);
-    
-    // Melhoria de Jogabilidade no Modo Médio
-    if (suitCount === 2) {
-        // Lógica interna de embaralhamento mais amigável pode ser expandida aqui
+
+    if (suitCount > 1) {
+        const topCards = deck.splice(0, 10);
+        topCards.sort((a, b) => (a.suit === b.suit ? ranks.indexOf(b.rank) - ranks.indexOf(a.rank) : 0));
+        deck = [...deck, ...topCards];
     }
 
     columns = Array.from({length: 10}, () => []);
@@ -150,7 +163,8 @@ function startTimer() {
         seconds++;
         const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
         const secs = (seconds % 60).toString().padStart(2, '0');
-        document.getElementById('timer').innerText = `${mins}:${secs}`;
+        const timerElem = document.getElementById('timer');
+        if (timerElem) timerElem.innerText = `${mins}:${secs}`;
     }, 1000);
 }
 
@@ -165,13 +179,11 @@ function render(empty = false) {
         let currentTop = 0;
         const colLength = columns[i].length;
         
-        // Ajuste Dinâmico de Espaçamento Vertical
-        // Se a coluna tiver muitas cartas, reduzimos o espaço entre elas para caber na tela
         let faceUpGap = 35;
         let faceDownGap = 12;
         
-        if (colLength > 10) {
-            const factor = Math.max(0.4, 1 - (colLength - 10) * 0.05);
+        if (colLength > 12) {
+            const factor = Math.max(0.35, 1 - (colLength - 10) * 0.06);
             faceUpGap = Math.floor(35 * factor);
             faceDownGap = Math.floor(12 * factor);
         }
@@ -194,7 +206,6 @@ function render(empty = false) {
         });
     }
     
-    // Atualização do Deck de Reserva (Apenas o Badge clicável)
     const remainingPiles = Math.ceil(deck.length / 10);
     const deckCountElem = document.getElementById('deck-count');
     const deckContainer = document.getElementById('deck-container');
@@ -202,7 +213,6 @@ function render(empty = false) {
     
     if (deckCountElem) {
         deckCountElem.innerText = remainingPiles;
-        // Torna o badge clicável
         deckCountElem.style.cursor = 'pointer';
         deckCountElem.onclick = (e) => {
             e.stopPropagation();
@@ -214,11 +224,9 @@ function render(empty = false) {
         if (deck.length > 0) {
             deckContainer.style.display = 'block';
             if (deckPile) {
-                // Remove o visual de carta do fundo, deixando apenas o badge
                 deckPile.style.background = 'transparent';
                 deckPile.style.border = 'none';
                 deckPile.style.boxShadow = 'none';
-                // Remove o cursor do container para que pareça que apenas o badge é clicável
                 deckContainer.style.cursor = 'default';
             }
         } else {
@@ -268,10 +276,12 @@ function checkSequences() {
                 if (completedSuits.length === 8) {
                     if (timerInterval) clearInterval(timerInterval); 
                     playVictorySound();
-                    const messages = ['Dodou venceu!', 'Parabéns dodou!', 'Você é incrível, dodou!', 'Dodou é o melhor!', 'Joga muito dodou!'];
+                    const messages = ['Dodou venceu!', 'Parabéns dodou!', 'Você é incrível!', 'Sensacional!', 'Joga muito!'];
                     const msgDiv = document.getElementById('message');
-                    msgDiv.innerHTML = `<h2>🏆 VITÓRIA!</h2><p>${messages[Math.floor(Math.random() * messages.length)]}</p><button class="btn" onclick="initGame()" style="margin: 20px auto;">Jogar Novamente</button>`;
-                    msgDiv.style.display = 'block';
+                    if (msgDiv) {
+                        msgDiv.innerHTML = `<h2>🏆 VITÓRIA!</h2><p>${messages[Math.floor(Math.random() * messages.length)]}</p><button class="btn" onclick="initGame()" style="margin: 20px auto;">Jogar Novamente</button>`;
+                        msgDiv.style.display = 'block';
+                    }
                 }
                 return;
             }
@@ -280,7 +290,7 @@ function checkSequences() {
 }
 
 function isComplete(a) {
-    if (a[0].rank !== 'K') return false;
+    if (a.length === 0 || a[0].rank !== 'K') return false;
     for (let i = 0; i < 13; i++) {
         if (a[i].suit !== a[0].suit || ranks.indexOf(a[i].rank) !== 12 - i) return false;
     }
@@ -396,4 +406,6 @@ function updateStatus() {
     if (scoreElem) scoreElem.innerText = score; 
 }
 
-window.onload = initGame;
+if (typeof window !== 'undefined') {
+    window.onload = initGame;
+}
