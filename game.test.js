@@ -1,4 +1,16 @@
-const { canDrop, isMovableSequence, isComplete, calculateScore } = require('./script.js');
+const { canDrop, isMovableSequence, isComplete, calculateScore } = require('./src/index.js');
+const {
+    createDeck,
+    initializeGameState,
+    saveState,
+    undoMove,
+    moveCards,
+    drawFromDeck,
+    getHint,
+    resolveSequences
+} = require('./src/game/logic.js');
+const { store } = require('./src/store/store.js');
+const config = require('./src/config.js');
 
 // Definindo o array de ranks globalmente para que o isMovableSequence consiga acessá-lo durante os testes
 global.ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -80,5 +92,88 @@ describe('Lógica de Vitória e Pontuação', () => {
 
     test('A pontuação inicial deve ser 500', () => {
         expect(calculateScore()).toBe(500);
+    });
+});
+
+describe('Game engine state management', () => {
+    beforeEach(() => {
+        store.reset();
+        global.columns = store.state.columns;
+    });
+
+    test('createDeck deve gerar 104 cartas para 2 e 4 naipes', () => {
+        const deck2Suits = createDeck(['♠', '♥']);
+        const deck4Suits = createDeck(['♠', '♥', '♣', '♦']);
+
+        expect(deck2Suits).toHaveLength(104);
+        expect(deck4Suits).toHaveLength(104);
+        expect(deck2Suits.every((card) => card.faceUp === false)).toBe(true);
+    });
+
+    test('initializeGameState configura deck e colunas corretamente', () => {
+        initializeGameState(['♠', '♥']);
+
+        expect(store.state.deck).toHaveLength(104);
+        expect(store.state.columns).toHaveLength(config.dealColumns);
+        expect(store.state.columns.every((col) => Array.isArray(col))).toBe(true);
+    });
+
+    test('moveCards atualiza score, move cartas e não vence por padrão', () => {
+        store.state.columns = Array.from({ length: config.dealColumns }, () => []);
+        store.state.columns[0] = [
+            { rank: 'K', suit: '♠', faceUp: true },
+            { rank: 'Q', suit: '♠', faceUp: true }
+        ];
+        store.state.columns[1] = [{ rank: 'J', suit: '♠', faceUp: true }];
+        store.state.score = 10;
+
+        const result = moveCards(0, 0, 1);
+
+        expect(store.state.score).toBe(9);
+        expect(store.state.columns[0]).toEqual([]);
+        expect(store.state.columns[1]).toHaveLength(3);
+        expect(result.victory).toBe(false);
+        expect(result.completed).toBe(false);
+    });
+
+    test('resolveSequences remove uma sequência completa e atualiza completedSuits', () => {
+        store.state.columns = Array.from({ length: config.dealColumns }, () => []);
+        const fullSequence = ['K','Q','J','10','9','8','7','6','5','4','3','2','A'].map((rank) => ({ rank, suit: '♥', faceUp: true }));
+        store.state.columns[0] = fullSequence;
+
+        const result = resolveSequences();
+
+        expect(result).toBe(true);
+        expect(store.state.columns[0]).toHaveLength(0);
+        expect(store.state.completedSuits).toContain('♥');
+    });
+
+    test('undoMove restaura o estado anterior', () => {
+        store.state.columns = Array.from({ length: config.dealColumns }, () => []);
+        store.state.columns[0] = [{ rank: 'K', suit: '♠', faceUp: true }];
+        saveState();
+        store.state.columns[0].push({ rank: 'Q', suit: '♠', faceUp: true });
+
+        const hasHistory = undoMove();
+
+        expect(hasHistory).toBe(false);
+        expect(store.state.columns[0]).toHaveLength(1);
+        expect(store.state.columns[0][0].rank).toBe('K');
+    });
+
+    test('getHint encontra um movimento válido quando existe', () => {
+        store.state.columns = Array.from({ length: config.dealColumns }, () => []);
+        global.columns = store.state.columns;
+        store.state.columns[0] = [
+            { rank: '10', suit: '♠', faceUp: true },
+            { rank: '9', suit: '♠', faceUp: true }
+        ];
+        store.state.columns[1] = [{ rank: 'J', suit: '♠', faceUp: true }];
+
+        const hint = getHint();
+
+        expect(hint).not.toBeNull();
+        expect(hint.from).toBe(0);
+        expect(hint.to).toBe(1);
     });
 });

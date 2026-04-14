@@ -1,9 +1,10 @@
 const isNode = typeof module !== 'undefined' && module.exports;
+const config = isNode ? require('../config.js') : window.appConfig;
 
 const gameState = {
-    ranks: ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'],
+    ranks: config.ranks,
     deck: [],
-    columns: Array.from({ length: 10 }, () => []),
+    columns: Array.from({ length: config.dealColumns }, () => []),
     score: 500,
     seconds: 0,
     timerInterval: null,
@@ -15,15 +16,17 @@ const gameState = {
 
 const store = {
     state: gameState,
+    subscribers: [],
 
     reset() {
         this.state.deck = [];
-        this.state.columns = Array.from({ length: 10 }, () => []);
+        this.state.columns = Array.from({ length: config.dealColumns }, () => []);
         this.state.score = 500;
         this.state.seconds = 0;
         this.state.history = [];
         this.state.completedSuits = [];
         this.state.isDealing = false;
+        this.notify();
     },
 
     takeSnapshot() {
@@ -44,6 +47,17 @@ const store = {
         this.state.columns = snapshot.columns;
         this.state.score = snapshot.score;
         this.state.completedSuits = snapshot.completedSuits;
+        this.notify();
+    },
+
+    subscribe(callback) {
+        if (typeof callback === 'function') {
+            this.subscribers.push(callback);
+        }
+    },
+
+    notify() {
+        this.subscribers.forEach((callback) => callback(this.state));
     }
 };
 
@@ -61,12 +75,7 @@ if (!isNode) {
     window.store = store;
     window.getActiveRanks = getActiveRanks;
     window.getActiveColumns = getActiveColumns;
-}
-
-if (!isNode) {
-    window.store = store;
-    window.getActiveRanks = getActiveRanks;
-    window.getActiveColumns = getActiveColumns;
+    window.subscribeToState = store.subscribe.bind(store);
 }
 
 if (isNode) {
