@@ -9,28 +9,47 @@ env:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '24'
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
 
-    - name: Install dependencies
-      run: npm install
+      - name: Install dependencies
+        run: npm install
 
-    - name: Run Tests
-      run: npm test
+      - name: Run Tests
+        run: npm test
 
-    - name: Deploy to GitHub Pages
-      if: success()
-      uses: JamesIves/github-pages-deploy-action@v4
-      with:
-        folder: . # Onde estão seus arquivos index.html, script.js, etc.
-        branch: main # Branch de destino do deploy
+      - name: Prepare GitHub Pages artifact
+        if: success()
+        run: |
+          mkdir -p gh-pages
+          rsync -av --exclude='.github' --exclude='node_modules' --exclude='*.test.js' --exclude='package.json' --exclude='package-lock.json' --exclude='README.md' --exclude='.git' ./ gh-pages/
+
+      - name: Upload Pages artifact
+        if: success()
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: gh-pages
+
+  deploy-pages:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v1
