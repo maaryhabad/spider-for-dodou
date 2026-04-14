@@ -7,7 +7,7 @@ function getAudioCtx() {
     try {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         return audioCtx;
-    } catch (e) {
+    } catch {
         return null;
     }
 }
@@ -24,7 +24,7 @@ function playErrorSound() {
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
         osc.start();
         osc.stop(ctx.currentTime + 0.2);
-    } catch (e) {
+    } catch {
         // audio not supported
     }
 }
@@ -45,7 +45,7 @@ function playVictorySound() {
             osc.start(ctx.currentTime + i * 0.15);
             osc.stop(ctx.currentTime + i * 0.15 + 0.5);
         });
-    } catch (e) {
+    } catch {
         // audio not supported
     }
 }
