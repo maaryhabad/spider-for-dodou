@@ -5,7 +5,6 @@ const {
     saveState,
     undoMove,
     moveCards,
-    drawFromDeck,
     getHint,
     resolveSequences
 } = require('./src/game/logic.js');

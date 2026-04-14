@@ -1,3 +1,5 @@
+/* global isMovableSequence, autoMove, initializeGameState, undoMove, drawFromDeck, canDrop, moveCards, getHint */
+
 const isNode = typeof module !== 'undefined' && module.exports;
 const storeContainer = isNode ? require('../store/store.js') : window;
 const config = isNode ? require('../config.js') : window.appConfig;

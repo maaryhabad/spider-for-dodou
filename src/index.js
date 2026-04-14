@@ -1,3 +1,5 @@
+/* global initGame */
+
 const isNode = typeof module !== 'undefined' && module.exports;
 
 if (isNode) {
